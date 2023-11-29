@@ -17,9 +17,11 @@ The Excel sheet will be generated in the same directory as the jar file, in a fo
 The following metric was used in calculating the ranking: 
 
 If Hackerrank Usernames & Contest ID's are provided :
+
 30% Codeforces_Rating + 30% GFG_Contest_Score + 10% GFG_Practice_Score + 10% Leetcode_Rating + 10% Codechef_Rating + 10% HackerRank. 
 
 If NOT:
+
 35% Codeforces_Rating + 30% GFG_Contest_Score + 10% GFG_Practice_Score + 15% Leetcode_Rating + 10% Codechef_Rating. 
 
 Since contest score can be too big when compared to ratings, normalization was performed for the exact metric.
