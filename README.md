@@ -8,7 +8,7 @@ I have created this project(overnight) to scrape ratings from platforms which in
 
 The usage is quite simple! Just upload an excel sheet of users, provide usernames of all HackerRank Contests to be considered and it automatically generates an excel sheet printing out their ratings and scores(gfg, hackerrank) across the above mentioned 5 platforms. Note that Providing HackerRank Contests or HackerRank Usernames is Optional.
 
-An Excel sheet must be selected which contains columns in this **EXACT** order: {Handle, GFG_Handle, Codeforces_Handle, LeetCode_Handle, CodeChef_Handle, HackerRank_Handle(Optional)}
+An Excel sheet must be selected which contains columns in this **EXACT** order: {**Handle, GFG_Handle, Codeforces_Handle, LeetCode_Handle, CodeChef_Handle, HackerRank_Handle(Optional)**}
 
 The Excel sheet will be generated in the same directory as the jar file, in a folder called Leaderboards, which contains the following columns: {Handle, Codeforces_Handle, Codeforces_Rating, GFG_Handle, GFG_Contest_Score, GFG_Practice_Score, Leetcode_Handle, Leetcode_Rating, CodeChef_Handle, Codechef_Rating, HackerRank_Handle, HackerRank_Practice_Score, Percentile}
 
