@@ -36,12 +36,15 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject; 
 
 public class CodeRankingLeaderboard extends javax.swing.JFrame { 
     private String excelSheetField = "";
     HashMap <String, Integer> geeksforgeeksDB = new HashMap<>(); 
     HashMap <String, Integer> hackerrankDB = new HashMap<>(); 
+    HashMap <String, Integer> codeforcesDB = new HashMap<>(); 
+    
     JProgressBar progressBar;   
     static boolean hackerrankchk = false;
     private JTextArea searchTokenField;
@@ -270,6 +273,7 @@ public class CodeRankingLeaderboard extends javax.swing.JFrame {
                     }  
                     this.geeksforgeeksDB.clear();
                     this.hackerrankDB.clear(); 
+                    this.codeforcesDB.clear();
                     // Close the "Please wait" dialog
                     pleaseWaitDialog.dispose(); 
                     // Enable access to the previous window
@@ -643,7 +647,7 @@ public class CodeRankingLeaderboard extends javax.swing.JFrame {
                         JSONObject jsonObject = new JSONObject(jsonContent.toString()); 
                         int rating = 0;
                         try{
-                        rating = jsonObject.getInt("currentRating");
+                            rating = jsonObject.getInt("currentRating");
                         }catch(Exception e) { rating = 0; } 
                         list.get(i).setCodeChefRating(rating);
                         codechefMaxRating = Integer.max(codechefMaxRating, rating); 
@@ -675,36 +679,60 @@ public class CodeRankingLeaderboard extends javax.swing.JFrame {
                         list.get(i).setLeetcodeRating(rating);
                         leetcodeMaxRating = Integer.max(rating, leetcodeMaxRating);
                     }catch (Exception e) { }
-                }catch(Exception e) {  }
-                // codeforces 
-                try{
-                    if(list.get(i).getCodeforcesHandle().isBlank()) throw new Exception("");
-                    url = "https://codeforces.com/api/user.info?handles="+list.get(i).getCodeforcesHandle();
-                    websiteUrl = new URL(url);
-                    connection = new URL(url).openConnection();
-                    o = (HttpURLConnection) websiteUrl.openConnection();
-                    o.setRequestMethod("GET");
-                    if (o.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND || o.getResponseCode() == HttpURLConnection.HTTP_NOT_ACCEPTABLE)
-                    {  throw new ArithmeticException(); } 
-                    inputStream = connection.getInputStream();
-                    try ( BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
-                        StringBuilder jsonContent = new StringBuilder();
-                        String line;
-                        while ((line = bufferedReader.readLine()) != null) { 
-                            jsonContent.append(line);
-                        }
-                        JSONObject jsonObject = new JSONObject(jsonContent.toString()); 
-                        int rating = 0;
-                        try{ 
-                            rating = (int)jsonObject.getJSONArray("result").getJSONObject(0).getInt("maxRating"); 
-                        }catch(Exception e) { rating = 0; } 
-                        list.get(i).setCodeforcesRating(rating);
-                        codeforcesMaxRating = Integer.max(rating, codeforcesMaxRating); 
-                    }catch (Exception e) { } 
-                } catch(Exception e) {  } 
-                progressBar.setValue( 10 + (int)(((double) (i+1) / n) * 90) );
+                }catch(Exception e) {  } 
+                
+                progressBar.setValue( 10 + (int)(((double) (i+1) / n) * 87) );
             }
         } catch(Exception e) {}
+        
+        //codeforces
+        try {
+            String url = "https://codeforces.com/api/user.ratedList?activeOnly=false&includeRetired=true";
+            JSONArray rows = null;
+            try {
+                URL websiteUrl = new URL(url);
+                URLConnection connection = new URL(url).openConnection();
+                HttpURLConnection o = (HttpURLConnection) websiteUrl.openConnection();
+                o.setRequestMethod("GET");
+                if (o.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND || o.getResponseCode() == HttpURLConnection.HTTP_NOT_ACCEPTABLE) {
+                    JOptionPane.showMessageDialog(null, "No Internet | Could not connect!", "Error", JOptionPane.ERROR_MESSAGE); 
+                }
+                InputStream inputStream = connection.getInputStream();
+                try ( BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
+                    StringBuilder jsonContent = new StringBuilder();
+                    String line;
+                    while ((line = bufferedReader.readLine()) != null) {
+                        jsonContent.append(line);
+                    }
+                    JSONObject jsonObject = new JSONObject(jsonContent.toString());
+                    String status = jsonObject.getString("status");
+                    if (status.equals("OK")) {
+                        rows = jsonObject.getJSONArray("result");
+                    }
+                }
+            } catch (HeadlessException | IOException | NumberFormatException | JSONException e) {
+                JOptionPane.showMessageDialog(null, "No Internet!", "Error", JOptionPane.ERROR_MESSAGE); 
+            }
+            JSONArray standings = rows; 
+            try { 
+                if (standings != null) {
+                    for (int j = 0; j < standings.length(); j++) {
+                        JSONObject member = standings.getJSONObject(j);
+                        String handle = member.getString("handle").toLowerCase();
+                        int points = member.getInt("rating"); 
+                        if(codeforcesDB.containsKey(handle)) {
+                            list.get(codeforcesDB.get(handle)).setCodeforcesRating(points);
+                            codeforcesMaxRating = Integer.max(points, codeforcesMaxRating); 
+                        } 
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(null, "Something went wrong! 222", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(null, "Something Went Wrong! 223", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch(Exception e) {  }
+        progressBar.setValue(100) ;
         return list;
     } 
 
@@ -780,28 +808,34 @@ public class CodeRankingLeaderboard extends javax.swing.JFrame {
                     } else break;
                     if ( codeforcesCell != null ) { 
                         String cfhandle = codeforcesCell.toString().replace(" ", "").toLowerCase();  
+                        cfhandle = cfhandle.replace("#n/a", "");
                         cfhandle = cfhandle.replace("@cmritonline.ac.in", "");
+                        codeforcesDB.put(cfhandle, ind);
                         participant.setCodeforcesHandle(cfhandle); 
                     }
                     if ( gfgCell != null ) { 
                         String gfghandle = gfgCell.toString().replace(" ", "").toLowerCase();  
+                        gfghandle = gfghandle.replace("#n/a", "");
                         gfghandle = gfghandle.replace("@cmritonline.ac.in", "");
                         participant.setGeeksForGeeksHandle(gfghandle);
                         geeksforgeeksDB.put(gfghandle, ind);
                     }
                     if ( leetcodeCell != null ){
                         String lthandle = leetcodeCell.toString().replace(" ", "").toLowerCase();  
+                        lthandle = lthandle.replace("#n/a", "");
                         lthandle = lthandle.replace("@cmritonline.ac.in", "");
                         participant.setLeetcodeHandle(lthandle); 
                     }
                     if ( codechefCell != null ){
                         String cchandle = codechefCell.toString().replace(" ", "").toLowerCase();  
+                        cchandle = cchandle.replace("#n/a", "");
                         cchandle = cchandle.replace("@cmritonline.ac.in", "");
                         participant.setCodeChefHandle(cchandle); 
                     }
                     if ( hackerrankCell != null && hackerrankchk ){
                         String hrhandle = hackerrankCell.toString().replace(" ", "").toLowerCase();
-                        if(hrhandle.charAt(0) == '@') hrhandle = hrhandle.substring(1); 
+                        hrhandle = hrhandle.replace("#n/a", "");
+                        if( hrhandle.length()>1 && hrhandle.charAt(0) == '@') hrhandle = hrhandle.substring(1); 
                         hrhandle = hrhandle.replace("@cmritonline.ac.in", "");
                         participant.setHackerrankHandle(hrhandle); 
                         hackerrankDB.put(hrhandle, ind);
